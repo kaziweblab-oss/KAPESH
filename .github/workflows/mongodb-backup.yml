@@ -1,0 +1,45 @@
+name: MongoDB backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create compressed database archive
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          if [ -z "$MONGODB_URI" ]; then
+            echo "Configure the MONGODB_URI Actions secret before running backups." >&2
+            exit 1
+          fi
+          if [ -z "$BACKUP_ENCRYPTION_KEY" ]; then
+            echo "Configure the BACKUP_ENCRYPTION_KEY Actions secret before running backups." >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/kpesh-backup"
+          docker run --rm \
+            -v "$RUNNER_TEMP/kpesh-backup:/backup" \
+            -e MONGODB_URI \
+            mongo:8 \
+              sh -c 'mongodump --uri="$MONGODB_URI" --archive="/backup/kpesh-$(date -u +%Y%m%dT%H%M%SZ).archive.gz" --gzip'
+            for archive in "$RUNNER_TEMP"/kpesh-backup/*.archive.gz; do
+              printf '%s' "$BACKUP_ENCRYPTION_KEY" | gpg \
+                --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+                --symmetric --cipher-algo AES256 --output "$archive.gpg" "$archive"
+            rm "$archive"
+          done
+      - name: Store backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kpesh-mongodb-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/kpesh-backup/*.archive.gz.gpg
+          retention-days: 30

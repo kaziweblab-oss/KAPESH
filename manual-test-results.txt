@@ -1,0 +1,20 @@
+KPESH verification results
+
+Automated checks (project folder):
+- `npm run lint` - PASS
+- `npm run typecheck` - PASS
+- `npm run build` - PASS; Next.js generated 63 pages/routes.
+
+HTTP smoke checks against the existing local Next.js server:
+- `http://localhost:3000/bn` - 200
+- `http://localhost:3000/en` - 200
+- `http://localhost:3000/bn/services` - 200
+- `http://localhost:3000/bn/projects` - 200
+- `http://localhost:3000/bn/products` - 200
+- `http://localhost:3000/bn/blog` - 200
+- `http://localhost:3000/admin/login` - 200
+- `http://localhost:3000/admin` - 307 redirect while signed out
+- `/admin/users`, `/admin/inquiries`, `/admin/media`, `/admin/audit-log` - 307 redirects while signed out
+- `GET /api/admin/users` - 307 redirect while signed out
+
+An additional `npm run dev` attempt detected that the project already had a dev server on port 3000; the existing server was left running and used for the HTTP checks. Credentialed admin login, role-specific operations, and ImageKit upload still require manual verification with configured credentials.
