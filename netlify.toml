@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SITE_URL,IMAGEKIT_URL_ENDPOINT"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
